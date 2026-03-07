@@ -1,4 +1,4 @@
-﻿namespace Ace7Ed
+namespace Ace7Ed
 {
     partial class Launcher
     {
@@ -15,6 +15,10 @@
         {
             if (disposing && (components != null))
             {
+                GameProvider?.Dispose();
+                GameProvider = null;
+                ModsProvider?.Dispose();
+                ModsProvider = null;
                 components.Dispose();
             }
             base.Dispose(disposing);

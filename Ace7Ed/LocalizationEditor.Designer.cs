@@ -1,4 +1,4 @@
-﻿namespace Ace7Ed
+namespace Ace7Ed
 {
     partial class LocalizationEditor
     {
@@ -36,6 +36,9 @@
             MSOptionImportLocalization = new ToolStripMenuItem();
             MSOptionBatchCopyLanguage = new ToolStripMenuItem();
             MSOptionsToggleDarkTheme = new ToolStripMenuItem();
+            MSOptionAddAddon = new ToolStripMenuItem();
+            MSOptionCopyAddon = new ToolStripMenuItem();
+            MSOptionPasteAddon = new ToolStripMenuItem();
             CmnTreeView = new TreeView();
             DatsDataGridView = new DataGridView();
             DatLanguageComboBox = new ComboBox();
@@ -77,7 +80,7 @@
             // 
             // MenuStripOptions
             // 
-            MenuStripOptions.DropDownItems.AddRange(new ToolStripItem[] { MSOptionImportLocalization, MSOptionBatchCopyLanguage, MSOptionsToggleDarkTheme });
+            MenuStripOptions.DropDownItems.AddRange(new ToolStripItem[] { MSOptionImportLocalization, MSOptionBatchCopyLanguage, MSOptionsToggleDarkTheme, MSOptionAddAddon, MSOptionCopyAddon, MSOptionPasteAddon });
             MenuStripOptions.Name = "MenuStripOptions";
             MenuStripOptions.Size = new Size(61, 20);
             MenuStripOptions.Text = "Options";
@@ -104,6 +107,30 @@
             MSOptionsToggleDarkTheme.Size = new Size(194, 22);
             MSOptionsToggleDarkTheme.Text = "Toggle Dark Theme";
             MSOptionsToggleDarkTheme.Click += MSOptionsToggleDarkTheme_Click;
+            // 
+            // MSOptionAddAddon
+            // 
+            MSOptionAddAddon.Enabled = false;
+            MSOptionAddAddon.Name = "MSOptionAddAddon";
+            MSOptionAddAddon.Size = new Size(194, 22);
+            MSOptionAddAddon.Text = "Add an add-on";
+            MSOptionAddAddon.Click += MSOptionAddAddon_Click;
+            // 
+            // MSOptionCopyAddon
+            // 
+            MSOptionCopyAddon.Enabled = false;
+            MSOptionCopyAddon.Name = "MSOptionCopyAddon";
+            MSOptionCopyAddon.Size = new Size(194, 22);
+            MSOptionCopyAddon.Text = "Copy add-on";
+            MSOptionCopyAddon.Click += MSOptionCopyAddon_Click;
+            // 
+            // MSOptionPasteAddon
+            // 
+            MSOptionPasteAddon.Enabled = false;
+            MSOptionPasteAddon.Name = "MSOptionPasteAddon";
+            MSOptionPasteAddon.Size = new Size(194, 22);
+            MSOptionPasteAddon.Text = "Paste add-on";
+            MSOptionPasteAddon.Click += MSOptionPasteAddon_Click;
             // 
             // CmnTreeView
             // 
@@ -178,6 +205,7 @@
             MainMenuStrip = LocalizationEditorMenuStrip;
             Name = "LocalizationEditor";
             Text = "Localization Editor";
+            FormClosing += LocalizationEditor_FormClosing;
             KeyDown += LocalizationEditor_KeyDown;
             LocalizationEditorMenuStrip.ResumeLayout(false);
             LocalizationEditorMenuStrip.PerformLayout();
@@ -190,8 +218,6 @@
 
         private MenuStrip LocalizationEditorMenuStrip;
         private TreeView CmnTreeView;
-        private ToolStripMenuItem LocalizationEditorMenuStripFile;
-        private ToolStripMenuItem LEMSMainOpen;
         private DataGridView DatsDataGridView;
         private ToolStripMenuItem MenuStripMain;
         private ToolStripMenuItem MenuStripOptions;
@@ -202,5 +228,8 @@
         private ToolStripMenuItem MSMainSave;
         private ToolStripMenuItem MSOptionBatchCopyLanguage;
         private ToolStripMenuItem MSOptionImportLocalization;
+        private ToolStripMenuItem MSOptionAddAddon;
+        private ToolStripMenuItem MSOptionCopyAddon;
+        private ToolStripMenuItem MSOptionPasteAddon;
     }
 }

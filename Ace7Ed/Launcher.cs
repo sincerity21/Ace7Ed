@@ -1,4 +1,4 @@
-﻿using Ace7Ed.Properties;
+using Ace7Ed.Properties;
 using Ace7LocalizationFormat.Formats;
 using Ace7LocalizationFormat;
 using CUE4Parse.Encryption.Aes;
@@ -22,8 +22,8 @@ namespace Ace7Ed
     {
         public List<KeyValuePair<string, Dictionary<string, GameFile>>> PaksGameFiles = new List<KeyValuePair<string, Dictionary<string, GameFile>>>();
         public List<KeyValuePair<string, Dictionary<string, GameFile>>> PaksModsGameFiles = new List<KeyValuePair<string, Dictionary<string, GameFile>>>();
-        public DefaultFileProvider GameProvider;
-        public DefaultFileProvider ModsProvider;
+        public DefaultFileProvider? GameProvider;
+        public DefaultFileProvider? ModsProvider;
 
         public Launcher()
         {
@@ -76,7 +76,7 @@ namespace Ace7Ed
         {
             string gameDirectory = LauncherTextBoxGameDir.Text;
 
-            GameProvider = new DefaultFileProvider(gameDirectory + "\\Game\\Content\\Paks", SearchOption.TopDirectoryOnly, true, new VersionContainer(EGame.GAME_AceCombat7));
+            GameProvider = new DefaultFileProvider(gameDirectory + "\\Game\\Content\\Paks", SearchOption.TopDirectoryOnly, new VersionContainer(EGame.GAME_AceCombat7), StringComparer.OrdinalIgnoreCase);
             Utils.GetGameFiles(GameProvider, "68747470733a2f2f616365372e616365636f6d6261742e6a702f737065636961", PaksGameFiles);
 
             Configurations.Default.GamePath = LauncherTextBoxGameDir.Text;
@@ -95,6 +95,17 @@ namespace Ace7Ed
             {
                 localizationEditor.ShowDialog();
             }
+
+            // Dispose providers on a background thread so closing the form doesn't block the UI
+            var gp = GameProvider;
+            var mp = ModsProvider;
+            GameProvider = null;
+            ModsProvider = null;
+            _ = Task.Run(() =>
+            {
+                gp?.Dispose();
+                mp?.Dispose();
+            });
 
             Close();
         }
