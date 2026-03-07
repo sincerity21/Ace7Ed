@@ -7,8 +7,8 @@ A fork of [GreenTrafficLight’s Ace7Ed](https://github.com/GreenTrafficLight/Ac
 - **Undo** text edits (**Main → Undo** or **Ctrl+Z**).
 - **Export** to CSV with an optional **start** and **end** string number (**Options → Export…**).
 - **Import** from CSV with an option to **overwrite existing strings** or only fill empty slots (**Options → Import…**).
-- **Copy / paste to languages**: copy selected cells into one or more chosen target languages in one step.
 - **Add an add-on** (**Options → Add an add-on**) to add plane/skin-related string entries (e.g. for mods).
+- **Search** strings in the editor: use the **Search** box on the main form and choose a mode (**Number**, **ID**, or **Text**). Number matches the string index exactly; ID and Text filter by keyword (case-insensitive). Press **Enter** in the search box to apply the filter; clear the box to show all strings again.
 
 ### Building and running
 
