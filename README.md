@@ -19,5 +19,18 @@ A fork of [GreenTrafficLight’s Ace7Ed](https://github.com/GreenTrafficLight/Ac
 
 Third‑party components and their licenses are described in **[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)**.
 
-- **CUE4Parse** — Unreal Engine archive/package parsing (PAK reading and decryption). By FabianFG and contributors. Licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). Repository: [FabianFG/CUE4Parse](https://github.com/FabianFG/CUE4Parse/).
-- **Ace7Ed and Ace7‑Localization‑Format (GreenTrafficLight)** — Original C# tooling and localization format for ACE COMBAT 7. Repositories: [GreenTrafficLight/Ace7Ed](https://github.com/GreenTrafficLight/Ace7Ed), [GreenTrafficLight/Ace7-Localization-Format](https://github.com/GreenTrafficLight/Ace7-Localization-Format/). This fork builds on these projects and adds the features listed above.
+- **CUE4Parse**
+  - Unreal Engine archive / package parsing library by FabianFG and contributors.
+  - Repository: [FabianFG/CUE4Parse](https://github.com/FabianFG/CUE4Parse/)
+  - Licensed under the [Apache License 2.0](https://github.com/FabianFG/CUE4Parse/blob/master/LICENSE).
+  - This project uses CUE4Parse (directly or via bundled tools) in accordance with Apache‑2.0 and retains the original LICENSE and NOTICE files.
+
+- **Ace7Ed and Ace7‑Localization‑Format (GreenTrafficLight)**
+  - Original C# tooling and localization format for ACE COMBAT 7 by GreenTrafficLight.
+  - Repositories:
+    - [GreenTrafficLight/Ace7Ed](https://github.com/GreenTrafficLight/Ace7Ed)
+    - [GreenTrafficLight/Ace7-Localization-Format](https://github.com/GreenTrafficLight/Ace7-Localization-Format/)
+  - This fork builds on these projects and adds the features listed above.
+
+- **This editor**
+  - Enhancements and new features in this fork were vibe‑coded with [Cursor Pro](https://cursor.com).
