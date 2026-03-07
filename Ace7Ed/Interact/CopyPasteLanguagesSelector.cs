@@ -1,4 +1,5 @@
-﻿using Ace7LocalizationFormat.Formats;
+using Ace7LocalizationFormat.Formats;
+using DAT = Ace7LocalizationFormat.Formats.DatFile;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;

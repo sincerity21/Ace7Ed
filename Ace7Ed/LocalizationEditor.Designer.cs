@@ -31,16 +31,20 @@ namespace Ace7Ed
             LocalizationEditorMenuStrip = new MenuStrip();
             MenuStripMain = new ToolStripMenuItem();
             MSMainOpenFolder = new ToolStripMenuItem();
+            MSMainUndo = new ToolStripMenuItem();
             MSMainSave = new ToolStripMenuItem();
             MenuStripOptions = new ToolStripMenuItem();
             MSOptionImportLocalization = new ToolStripMenuItem();
             MSOptionBatchCopyLanguage = new ToolStripMenuItem();
             MSOptionsToggleDarkTheme = new ToolStripMenuItem();
             MSOptionAddAddon = new ToolStripMenuItem();
-            MSOptionCopyAddon = new ToolStripMenuItem();
-            MSOptionPasteAddon = new ToolStripMenuItem();
+            MSOptionExport = new ToolStripMenuItem();
+            MSOptionImport = new ToolStripMenuItem();
             CmnTreeView = new TreeView();
             DatsDataGridView = new DataGridView();
+            SearchLabel = new Label();
+            SearchTextBox = new TextBox();
+            SearchModeComboBox = new ComboBox();
             DatLanguageComboBox = new ComboBox();
             SelectedLanguageLabel = new Label();
             LocalizationEditorMenuStrip.SuspendLayout();
@@ -58,7 +62,7 @@ namespace Ace7Ed
             // 
             // MenuStripMain
             // 
-            MenuStripMain.DropDownItems.AddRange(new ToolStripItem[] { MSMainOpenFolder, MSMainSave });
+            MenuStripMain.DropDownItems.AddRange(new ToolStripItem[] { MSMainOpenFolder, MSMainUndo, MSMainSave });
             MenuStripMain.Name = "MenuStripMain";
             MenuStripMain.Size = new Size(46, 20);
             MenuStripMain.Text = "Main";
@@ -70,17 +74,26 @@ namespace Ace7Ed
             MSMainOpenFolder.Text = "Open Folder";
             MSMainOpenFolder.Click += MSMainOpenFolder_Click;
             // 
+            // MSMainUndo
+            // 
+            MSMainUndo.Name = "MSMainUndo";
+            MSMainUndo.ShortcutKeys = Keys.Control | Keys.Z;
+            MSMainUndo.Size = new Size(139, 22);
+            MSMainUndo.Text = "Undo";
+            MSMainUndo.Click += MSMainUndo_Click;
+            // 
             // MSMainSave
             // 
             MSMainSave.Name = "MSMainSave";
-            MSMainSave.ShortcutKeyDisplayString = "";
+            MSMainSave.ShortcutKeyDisplayString = "Ctrl+S";
+            MSMainSave.ShortcutKeys = Keys.Control | Keys.S;
             MSMainSave.Size = new Size(139, 22);
             MSMainSave.Text = "Save";
             MSMainSave.Click += MSMainSave_Click;
             // 
             // MenuStripOptions
             // 
-            MenuStripOptions.DropDownItems.AddRange(new ToolStripItem[] { MSOptionImportLocalization, MSOptionBatchCopyLanguage, MSOptionsToggleDarkTheme, MSOptionAddAddon, MSOptionCopyAddon, MSOptionPasteAddon });
+            MenuStripOptions.DropDownItems.AddRange(new ToolStripItem[] { MSOptionImportLocalization, MSOptionBatchCopyLanguage, MSOptionsToggleDarkTheme, MSOptionAddAddon, MSOptionExport, MSOptionImport });
             MenuStripOptions.Name = "MenuStripOptions";
             MenuStripOptions.Size = new Size(61, 20);
             MenuStripOptions.Text = "Options";
@@ -116,21 +129,21 @@ namespace Ace7Ed
             MSOptionAddAddon.Text = "Add an add-on";
             MSOptionAddAddon.Click += MSOptionAddAddon_Click;
             // 
-            // MSOptionCopyAddon
+            // MSOptionExport
             // 
-            MSOptionCopyAddon.Enabled = false;
-            MSOptionCopyAddon.Name = "MSOptionCopyAddon";
-            MSOptionCopyAddon.Size = new Size(194, 22);
-            MSOptionCopyAddon.Text = "Copy add-on";
-            MSOptionCopyAddon.Click += MSOptionCopyAddon_Click;
+            MSOptionExport.Enabled = false;
+            MSOptionExport.Name = "MSOptionExport";
+            MSOptionExport.Size = new Size(194, 22);
+            MSOptionExport.Text = "Export...";
+            MSOptionExport.Click += MSOptionExport_Click;
             // 
-            // MSOptionPasteAddon
+            // MSOptionImport
             // 
-            MSOptionPasteAddon.Enabled = false;
-            MSOptionPasteAddon.Name = "MSOptionPasteAddon";
-            MSOptionPasteAddon.Size = new Size(194, 22);
-            MSOptionPasteAddon.Text = "Paste add-on";
-            MSOptionPasteAddon.Click += MSOptionPasteAddon_Click;
+            MSOptionImport.Enabled = false;
+            MSOptionImport.Name = "MSOptionImport";
+            MSOptionImport.Size = new Size(194, 22);
+            MSOptionImport.Text = "Import...";
+            MSOptionImport.Click += MSOptionImport_Click;
             // 
             // CmnTreeView
             // 
@@ -170,6 +183,36 @@ namespace Ace7Ed
             DatsDataGridView.KeyDown += DatsDataGridView_KeyDown;
             DatsDataGridView.MouseDown += DatsDataGridView_MouseDown;
             // 
+            // SearchLabel
+            // 
+            SearchLabel.AutoSize = true;
+            SearchLabel.Location = new Point(271, 30);
+            SearchLabel.Name = "SearchLabel";
+            SearchLabel.Size = new Size(42, 15);
+            SearchLabel.TabIndex = 7;
+            SearchLabel.Text = "Search:";
+            // 
+            // SearchTextBox
+            // 
+            SearchTextBox.Location = new Point(318, 27);
+            SearchTextBox.Name = "SearchTextBox";
+            SearchTextBox.Size = new Size(115, 23);
+            SearchTextBox.TabIndex = 8;
+            SearchTextBox.KeyDown += SearchTextBox_KeyDown;
+            SearchTextBox.TextChanged += SearchTextBox_TextChanged;
+            // 
+            // SearchModeComboBox
+            // 
+            SearchModeComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
+            SearchModeComboBox.FormattingEnabled = true;
+            SearchModeComboBox.Items.AddRange(new object[] { "Number", "ID", "Text" });
+            SearchModeComboBox.Location = new Point(438, 27);
+            SearchModeComboBox.Name = "SearchModeComboBox";
+            SearchModeComboBox.Size = new Size(75, 23);
+            SearchModeComboBox.TabIndex = 9;
+            SearchModeComboBox.SelectedIndex = 0;
+            SearchModeComboBox.SelectedIndexChanged += SearchModeComboBox_SelectedIndexChanged;
+            // 
             // DatLanguageComboBox
             // 
             DatLanguageComboBox.Anchor = AnchorStyles.Top | AnchorStyles.Right;
@@ -196,6 +239,9 @@ namespace Ace7Ed
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(SearchModeComboBox);
+            Controls.Add(SearchTextBox);
+            Controls.Add(SearchLabel);
             Controls.Add(SelectedLanguageLabel);
             Controls.Add(DatLanguageComboBox);
             Controls.Add(DatsDataGridView);
@@ -219,17 +265,21 @@ namespace Ace7Ed
         private MenuStrip LocalizationEditorMenuStrip;
         private TreeView CmnTreeView;
         private DataGridView DatsDataGridView;
+        private Label SearchLabel;
+        private TextBox SearchTextBox;
+        private ComboBox SearchModeComboBox;
         private ToolStripMenuItem MenuStripMain;
         private ToolStripMenuItem MenuStripOptions;
         private ToolStripMenuItem MSOptionsToggleDarkTheme;
         private ComboBox DatLanguageComboBox;
         private Label SelectedLanguageLabel;
         private ToolStripMenuItem MSMainOpenFolder;
+        private ToolStripMenuItem MSMainUndo;
         private ToolStripMenuItem MSMainSave;
         private ToolStripMenuItem MSOptionBatchCopyLanguage;
         private ToolStripMenuItem MSOptionImportLocalization;
         private ToolStripMenuItem MSOptionAddAddon;
-        private ToolStripMenuItem MSOptionCopyAddon;
-        private ToolStripMenuItem MSOptionPasteAddon;
+        private ToolStripMenuItem MSOptionExport;
+        private ToolStripMenuItem MSOptionImport;
     }
 }

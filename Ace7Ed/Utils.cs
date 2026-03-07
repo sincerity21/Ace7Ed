@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -24,9 +24,9 @@ namespace Ace7Ed
             }
         }
 
-        public static byte[] GetGameFile(List<KeyValuePair<string, Dictionary<string, GameFile>>> paks, string fileName)
+        public static byte[]? GetGameFile(List<KeyValuePair<string, Dictionary<string, GameFile>>> paks, string fileName)
         {
-            byte[] gameFile = null;
+            byte[]? gameFile = null;
 
             foreach (var pakGameFiles in paks)
             {
@@ -39,7 +39,7 @@ namespace Ace7Ed
             return gameFile;
         }
 
-        public static ToolStripMenuItem CreateToolStripMenuItem(string text, string name, EventHandler eventHandler = null, bool enabled = true)
+        public static ToolStripMenuItem CreateToolStripMenuItem(string text, string name, EventHandler? eventHandler = null, bool enabled = true)
         {
             ToolStripMenuItem toolStripMenuItem = new ToolStripMenuItem(text);
             toolStripMenuItem.Name = name;

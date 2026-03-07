@@ -361,3 +361,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# DATLocalizationsTool - Precursor to the Ace7Ed project
+DATLocalizationsTool.v2.2.1/*

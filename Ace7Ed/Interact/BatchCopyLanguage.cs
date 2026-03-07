@@ -1,4 +1,6 @@
-﻿using Ace7LocalizationFormat.Formats;
+using Ace7LocalizationFormat.Formats;
+using CMN = Ace7LocalizationFormat.Formats.CmnFile;
+using DAT = Ace7LocalizationFormat.Formats.DatFile;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -117,11 +119,12 @@ namespace Ace7Ed.Interact
 
             PasteLanguagesDataGridView.Rows.Clear();
 
-            DAT selectedItem = (DAT)CopyLanguageComboBox.SelectedItem;
+            if (CopyLanguageComboBox.SelectedItem is not DAT selectedItem || SelectedCopyLanguageIndex == -1)
+                return;
 
             foreach (var dat in dats)
             {
-                if (dat.Letter != selectedItem.Letter && SelectedCopyLanguageIndex != -1)
+                if (dat.Letter != selectedItem.Letter)
                 {
                     PasteLanguagesDataGridView.Rows.Add(dat);
                 }

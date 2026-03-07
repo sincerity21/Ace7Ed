@@ -1,6 +1,8 @@
 using Ace7Ed.Properties;
 using Ace7LocalizationFormat.Formats;
 using Ace7LocalizationFormat;
+using CMN = Ace7LocalizationFormat.Formats.CmnFile;
+using DAT = Ace7LocalizationFormat.Formats.DatFile;
 using CUE4Parse.Encryption.Aes;
 using CUE4Parse.FileProvider;
 using CUE4Parse.FileProvider.Objects;
@@ -76,7 +78,7 @@ namespace Ace7Ed
         {
             string gameDirectory = LauncherTextBoxGameDir.Text;
 
-            GameProvider = new DefaultFileProvider(gameDirectory + "\\Game\\Content\\Paks", SearchOption.TopDirectoryOnly, new VersionContainer(EGame.GAME_AceCombat7), StringComparer.OrdinalIgnoreCase);
+            GameProvider = new DefaultFileProvider(gameDirectory + "\\Game\\Content\\Paks", SearchOption.TopDirectoryOnly, true, new VersionContainer(EGame.GAME_AceCombat7));
             Utils.GetGameFiles(GameProvider, "68747470733a2f2f616365372e616365636f6d6261742e6a702f737065636961", PaksGameFiles);
 
             Configurations.Default.GamePath = LauncherTextBoxGameDir.Text;
@@ -112,11 +114,18 @@ namespace Ace7Ed
     
         private (CMN, List<DAT>) LoadGameLocalization(char[] datLetters)
         {
-            CMN gameCmn = new CMN(Utils.GetGameFile(PaksGameFiles, "Nimbus/Content/Localization/Game/Cmn.dat"));
+            byte[]? cmnData = Utils.GetGameFile(PaksGameFiles, "Nimbus/Content/Localization/Game/Cmn.dat");
+            if (cmnData == null)
+                throw new InvalidOperationException("Cmn.dat not found in game paks.");
+            CMN gameCmn = new CMN(cmnData);
+
             List<DAT> gameDats = new List<DAT>();
             foreach (char datLetter in datLetters)
             {
-                gameDats.Add(new DAT(Utils.GetGameFile(PaksGameFiles, "Nimbus/Content/Localization/Game/" + datLetter + ".dat"), datLetter));
+                byte[]? datData = Utils.GetGameFile(PaksGameFiles, "Nimbus/Content/Localization/Game/" + datLetter + ".dat");
+                if (datData == null)
+                    throw new InvalidOperationException($"Game localization file {datLetter}.dat not found in paks.");
+                gameDats.Add(new DAT(datData, datLetter));
             }
 
             return (gameCmn, gameDats);
