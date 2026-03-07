@@ -33,4 +33,4 @@ Third‑party components and their licenses are described in **[THIRD_PARTY_NOTI
   - This fork builds on these projects and adds the features listed above.
 
 - **This editor**
-  - Enhancements and new features in this fork were vibe‑coded with [Cursor Pro](https://cursor.com).
+  - Enhancements and new features in this fork were vibe‑coded with Cursor Pro.
