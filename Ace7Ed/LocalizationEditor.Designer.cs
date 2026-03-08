@@ -126,7 +126,7 @@ namespace Ace7Ed
             MSOptionAddAddon.Enabled = false;
             MSOptionAddAddon.Name = "MSOptionAddAddon";
             MSOptionAddAddon.Size = new Size(194, 22);
-            MSOptionAddAddon.Text = "Add an add-on";
+            MSOptionAddAddon.Text = "Add a new plane";
             MSOptionAddAddon.Click += MSOptionAddAddon_Click;
             // 
             // MSOptionExport

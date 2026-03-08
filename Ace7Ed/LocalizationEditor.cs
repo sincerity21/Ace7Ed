@@ -697,7 +697,7 @@ namespace Ace7Ed
         {
             if (_modifiedLocalization.Item1 == null || _modifiedLocalization.Item2 == null)
             {
-                MessageBox.Show("Open a localization folder first.", "Add add-on");
+                MessageBox.Show("Open a localization folder first.", "Add a new plane");
                 return;
             }
 
@@ -710,7 +710,7 @@ namespace Ace7Ed
             }
             if (string.IsNullOrEmpty(plane))
             {
-                MessageBox.Show("Plane string cannot be empty.", "Add add-on");
+                MessageBox.Show("Plane string cannot be empty.", "Add a new plane");
                 return;
             }
 
@@ -721,7 +721,7 @@ namespace Ace7Ed
                 if (input.DialogResult != DialogResult.OK) return;
                 if (!int.TryParse(input.InputText?.Trim(), out skinCount) || skinCount < 6)
                 {
-                    MessageBox.Show("Please enter a number of skins (minimum 6).", "Add add-on");
+                    MessageBox.Show("Please enter a number of skins (minimum 6).", "Add a new plane");
                     return;
                 }
             }
@@ -749,7 +749,7 @@ namespace Ace7Ed
 
             foreach (string key in keysToAdd)
             {
-                if (!cmn.CheckVariableExist(key))
+                if (cmn.CheckVariableExist(key))
                     continue; // already exists, skip
                 cmn.AddVariable(key, cmn.Root, out int _);
                 foreach (var dat in dats)
