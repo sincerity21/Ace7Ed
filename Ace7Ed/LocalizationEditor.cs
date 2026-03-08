@@ -64,6 +64,14 @@ namespace Ace7Ed
 
         private readonly Stack<IUndoAction> _undoStack = new Stack<IUndoAction>();
 
+        private System.Windows.Forms.Timer? _closeTreeTimer;
+        private Stopwatch? _closeTreeStopwatch;
+        private Stopwatch? _closeTotalStopwatch;
+        private long _closeLogReleaseMs;
+        private long _closeLogComboMs;
+        private long _closeLogGridRowsMs;
+        private long _closeLogGridColsMs;
+
         public bool SavedChanges
         {
             get
@@ -122,16 +130,79 @@ namespace Ace7Ed
                 _isClosingDeferred = true;
                 e.Cancel = true;
                 Hide();
-                BeginInvoke(() =>
-                {
-                    ClearHeavyDataBeforeClose();
-                    Close();
-                });
+                BeginInvoke(StartDeferredClose);
             }
             else
             {
                 ClearHeavyDataBeforeClose();
             }
+        }
+
+        private void StartDeferredClose()
+        {
+            _closeTotalStopwatch = Stopwatch.StartNew();
+            var sw = Stopwatch.StartNew();
+
+            _modifiedLocalization = (null, null);
+            ClearUndoStack();
+            _closeLogReleaseMs = sw.ElapsedMilliseconds;
+
+            DatsDataGridView.SuspendLayout();
+            CmnTreeView.BeginUpdate();
+            try
+            {
+                sw.Restart();
+                DatLanguageComboBox.Items.Clear();
+                _closeLogComboMs = sw.ElapsedMilliseconds;
+
+                sw.Restart();
+                DatsDataGridView.Rows.Clear();
+                DatsDataGridView.Columns.Clear();
+                _closeLogGridRowsMs = sw.ElapsedMilliseconds;
+                _closeLogGridColsMs = 0; // combined with rows for log
+            }
+            finally
+            {
+                DatsDataGridView.ResumeLayout(false);
+            }
+
+            if (CmnTreeView.Nodes.Count == 0)
+            {
+                CmnTreeView.EndUpdate();
+                FinishCloseAndLog(treeMs: 0);
+                return;
+            }
+
+            _closeTreeStopwatch = Stopwatch.StartNew();
+            _closeTreeTimer = new System.Windows.Forms.Timer { Interval = TreeClearTimerIntervalMs };
+            _closeTreeTimer.Tick += CloseTreeTimer_Tick;
+            _closeTreeTimer.Start();
+        }
+
+        private void CloseTreeTimer_Tick(object? sender, EventArgs e)
+        {
+            ClearTreeNodesOneBatch(CmnTreeView.Nodes, TreeClearBatchSize);
+            if (CmnTreeView.Nodes.Count != 0)
+                return;
+
+            _closeTreeTimer!.Stop();
+            _closeTreeTimer.Dispose();
+            _closeTreeTimer = null;
+            _closeTreeStopwatch!.Stop();
+            long treeMs = _closeTreeStopwatch.ElapsedMilliseconds;
+            _closeTreeStopwatch = null;
+            CmnTreeView.EndUpdate();
+            FinishCloseAndLog(treeMs);
+        }
+
+        private void FinishCloseAndLog(long treeMs)
+        {
+            _closeTotalStopwatch!.Stop();
+            long totalMs = _closeTotalStopwatch.ElapsedMilliseconds;
+            _closeTotalStopwatch = null;
+            WriteCloseTimingsLog(_closeLogReleaseMs, _closeLogComboMs, treeMs, _closeLogGridRowsMs, _closeLogGridColsMs, totalMs);
+            MSMainSave.Enabled = false;
+            Close();
         }
 
         private void ClearHeavyDataBeforeClose()
@@ -177,6 +248,25 @@ namespace Ace7Ed
         }
 
         private const int TreeClearBatchSize = 80;
+        private const int TreeClearTimerIntervalMs = 50;
+
+        /// <summary>Removes up to maxCount nodes in bottom-up order; used by the close timer.</summary>
+        private static void ClearTreeNodesOneBatch(TreeNodeCollection nodes, int maxCount)
+        {
+            int removed = 0;
+            ClearTreeNodesOneBatchCore(nodes, maxCount, ref removed);
+        }
+
+        private static void ClearTreeNodesOneBatchCore(TreeNodeCollection nodes, int maxCount, ref int removed)
+        {
+            for (int i = nodes.Count - 1; i >= 0 && removed < maxCount; i--)
+            {
+                ClearTreeNodesOneBatchCore(nodes[i].Nodes, maxCount, ref removed);
+                if (removed >= maxCount) return;
+                nodes.RemoveAt(i);
+                removed++;
+            }
+        }
 
         /// <summary>Clears tree nodes from the leaves up; yields every batch so the UI stays responsive.</summary>
         private static void ClearTreeNodesBottomUp(TreeNodeCollection nodes, ref int removedCount)
