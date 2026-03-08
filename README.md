@@ -4,6 +4,7 @@ A fork of [GreenTrafficLight’s Ace7Ed](https://github.com/GreenTrafficLight/Ac
 
 ### New features
 
+- **Open single or selected languages** (**Main → Open single language…**): load only **Cmn.dat** plus one or more language DATs instead of all 13. Pick Cmn.dat first, then choose language file(s)—use **Ctrl+click** to select multiple (e.g. B and M). Useful when editing only a subset of languages. **Main → Open Folder** still loads the full set (Cmn + all 13 DATs).
 - **Undo** text edits (**Main → Undo** or **Ctrl+Z**).
 - **Export** to CSV with an optional **start** and **end** string number (**Options → Export…**).
 - **Import** from CSV with an option to **overwrite existing strings** or only fill empty slots (**Options → Import…**).
