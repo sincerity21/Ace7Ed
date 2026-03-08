@@ -737,7 +737,6 @@ namespace Ace7Ed
 
             for (int i = 0; i < 6 && i < skinCount; i++)
             {
-                keysToAdd.Add($"AircraftSkin_Name_{plane}_{i:D2}");
                 keysToAdd.Add($"AircraftSkin_Description_{plane}_{i:D2}");
             }
             for (int i = 6; i < skinCount; i++)
