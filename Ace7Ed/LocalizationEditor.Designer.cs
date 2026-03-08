@@ -31,6 +31,7 @@ namespace Ace7Ed
             LocalizationEditorMenuStrip = new MenuStrip();
             MenuStripMain = new ToolStripMenuItem();
             MSMainOpenFolder = new ToolStripMenuItem();
+            MSMainOpenSingleLanguage = new ToolStripMenuItem();
             MSMainUndo = new ToolStripMenuItem();
             MSMainSave = new ToolStripMenuItem();
             MenuStripOptions = new ToolStripMenuItem();
@@ -62,7 +63,7 @@ namespace Ace7Ed
             // 
             // MenuStripMain
             // 
-            MenuStripMain.DropDownItems.AddRange(new ToolStripItem[] { MSMainOpenFolder, MSMainUndo, MSMainSave });
+            MenuStripMain.DropDownItems.AddRange(new ToolStripItem[] { MSMainOpenFolder, MSMainOpenSingleLanguage, MSMainUndo, MSMainSave });
             MenuStripMain.Name = "MenuStripMain";
             MenuStripMain.Size = new Size(46, 20);
             MenuStripMain.Text = "Main";
@@ -73,6 +74,13 @@ namespace Ace7Ed
             MSMainOpenFolder.Size = new Size(139, 22);
             MSMainOpenFolder.Text = "Open Folder";
             MSMainOpenFolder.Click += MSMainOpenFolder_Click;
+            // 
+            // MSMainOpenSingleLanguage
+            // 
+            MSMainOpenSingleLanguage.Name = "MSMainOpenSingleLanguage";
+            MSMainOpenSingleLanguage.Size = new Size(180, 22);
+            MSMainOpenSingleLanguage.Text = "Open single language...";
+            MSMainOpenSingleLanguage.Click += MSMainOpenSingleLanguage_Click;
             // 
             // MSMainUndo
             // 
@@ -274,6 +282,7 @@ namespace Ace7Ed
         private ComboBox DatLanguageComboBox;
         private Label SelectedLanguageLabel;
         private ToolStripMenuItem MSMainOpenFolder;
+        private ToolStripMenuItem MSMainOpenSingleLanguage;
         private ToolStripMenuItem MSMainUndo;
         private ToolStripMenuItem MSMainSave;
         private ToolStripMenuItem MSOptionBatchCopyLanguage;

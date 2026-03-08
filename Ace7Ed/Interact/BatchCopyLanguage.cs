@@ -21,12 +21,10 @@ namespace Ace7Ed.Interact
         {
             get
             {
-                if (CopyLanguageComboBox.SelectedItem != null)
-                {
-                    DAT dat = (DAT)CopyLanguageComboBox.SelectedItem;
-                    return dat.Letter - 65;
-                }
-                return -1;
+                if (CopyLanguageComboBox.SelectedItem is not DAT dat || _Dats == null)
+                    return -1;
+                int index = _Dats.IndexOf(dat);
+                return index >= 0 ? index : -1;
             }
         }
 

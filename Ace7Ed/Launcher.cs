@@ -98,16 +98,16 @@ namespace Ace7Ed
                 localizationEditor.ShowDialog();
             }
 
-            // Dispose providers on a background thread so closing the form doesn't block the UI
+            // Dispose providers before closing so the process exits cleanly and doesn't lag the system
             var gp = GameProvider;
             var mp = ModsProvider;
             GameProvider = null;
             ModsProvider = null;
-            _ = Task.Run(() =>
+            Task.Run(() =>
             {
                 gp?.Dispose();
                 mp?.Dispose();
-            });
+            }).GetAwaiter().GetResult();
 
             Close();
         }

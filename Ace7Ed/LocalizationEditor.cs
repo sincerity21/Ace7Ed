@@ -2,11 +2,12 @@ using Ace7Ed.Properties;
 using Ace7Ed.Prompt;
 using Ace7LocalizationFormat.Formats;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
 using System.Windows.Forms;
 using CMN = Ace7LocalizationFormat.Formats.CmnFile;
 using DAT = Ace7LocalizationFormat.Formats.DatFile;
 using Ace7Ed.Interact;
-using System.Diagnostics;
 using System.ComponentModel.Design.Serialization;
 namespace Ace7Ed
 {
@@ -46,17 +47,15 @@ namespace Ace7Ed
         private int _selectedRowIndex = -1;
         private int _selectedColumnIndex = -1;
 
+        /// <summary>Index of the selected language DAT in the loaded list (0-based), or -1 if none.</summary>
         private int _selectedDatIndex
         {
             get
             {
-                if (DatLanguageComboBox.SelectedItem != null)
-                {
-                    DAT dat = (DAT)DatLanguageComboBox.SelectedItem;
-                    return dat.Letter - 65;
-                }
-                return -1;
-
+                if (DatLanguageComboBox.SelectedItem is not DAT dat || _modifiedLocalization.Item2 == null)
+                    return -1;
+                int index = _modifiedLocalization.Item2.IndexOf(dat);
+                return index >= 0 ? index : -1;
             }
         }
 
@@ -137,13 +136,78 @@ namespace Ace7Ed
 
         private void ClearHeavyDataBeforeClose()
         {
-            CmnTreeView.Nodes.Clear();
-            DatsDataGridView.Rows.Clear();
-            DatsDataGridView.Columns.Clear();
-            DatLanguageComboBox.Items.Clear();
+            var totalSw = Stopwatch.StartNew();
+            long releaseMs = 0, comboMs = 0, treeMs = 0, gridRowsMs = 0, gridColsMs = 0;
+
+            var sw = Stopwatch.StartNew();
             _modifiedLocalization = (null, null);
             ClearUndoStack();
+            releaseMs = sw.ElapsedMilliseconds;
+
+            DatsDataGridView.SuspendLayout();
+            CmnTreeView.BeginUpdate();
+            try
+            {
+                sw.Restart();
+                DatLanguageComboBox.Items.Clear();
+                comboMs = sw.ElapsedMilliseconds;
+
+                sw.Restart();
+                ClearTreeNodesBottomUp(CmnTreeView.Nodes);
+                treeMs = sw.ElapsedMilliseconds;
+
+                sw.Restart();
+                DatsDataGridView.Rows.Clear();
+                gridRowsMs = sw.ElapsedMilliseconds;
+
+                sw.Restart();
+                DatsDataGridView.Columns.Clear();
+                gridColsMs = sw.ElapsedMilliseconds;
+            }
+            finally
+            {
+                CmnTreeView.EndUpdate();
+                DatsDataGridView.ResumeLayout(false);
+            }
+
+            totalSw.Stop();
+            WriteCloseTimingsLog(releaseMs, comboMs, treeMs, gridRowsMs, gridColsMs, totalSw.ElapsedMilliseconds);
+
             MSMainSave.Enabled = false;
+        }
+
+        private const int TreeClearBatchSize = 80;
+
+        /// <summary>Clears tree nodes from the leaves up; yields every batch so the UI stays responsive.</summary>
+        private static void ClearTreeNodesBottomUp(TreeNodeCollection nodes, ref int removedCount)
+        {
+            for (int i = nodes.Count - 1; i >= 0; i--)
+            {
+                ClearTreeNodesBottomUp(nodes[i].Nodes, ref removedCount);
+                nodes.RemoveAt(i);
+                removedCount++;
+                if (removedCount % TreeClearBatchSize == 0)
+                    Application.DoEvents();
+            }
+        }
+
+        private static void ClearTreeNodesBottomUp(TreeNodeCollection nodes)
+        {
+            int removed = 0;
+            ClearTreeNodesBottomUp(nodes, ref removed);
+        }
+
+        private static void WriteCloseTimingsLog(long releaseMs, long comboMs, long treeMs, long gridRowsMs, long gridColsMs, long totalMs)
+        {
+            try
+            {
+                string dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Ace7Ed");
+                Directory.CreateDirectory(dir);
+                string path = Path.Combine(dir, "close_timings.log");
+                string line = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} | Release: {releaseMs} ms, Combo: {comboMs} ms, Tree: {treeMs} ms, GridRows: {gridRowsMs} ms, GridCols: {gridColsMs} ms, Total: {totalMs} ms{Environment.NewLine}";
+                File.AppendAllText(path, line);
+            }
+            catch { /* avoid affecting close if log fails */ }
         }
 
         private void ToggleDarkTheme()
@@ -155,6 +219,7 @@ namespace Ace7Ed
 
             Theme.SetDarkThemeToolStripMenuItem(MenuStripMain);
             Theme.SetDarkThemeToolStripMenuItem(MSMainOpenFolder);
+            Theme.SetDarkThemeToolStripMenuItem(MSMainOpenSingleLanguage);
             Theme.SetDarkThemeToolStripMenuItem(MSMainUndo);
             Theme.SetDarkThemeToolStripMenuItem(MSMainSave);
 
@@ -267,6 +332,50 @@ namespace Ace7Ed
                 throw new Exception("Missing Dats");
             }
 
+            return (modifiedCmn, modifiedDats);
+        }
+
+        /// <summary>
+        /// Load Cmn.dat and one or more language DATs (e.g. for editing selected languages).
+        /// </summary>
+        public (CMN, List<DAT>) LoadLocalizationSingle(string cmnPath, string[] datPaths)
+        {
+            if (!File.Exists(cmnPath))
+            {
+                MessageBox.Show("Cmn.dat file not found.", "Error");
+                throw new FileNotFoundException("Cmn.dat not found.", cmnPath);
+            }
+            if (datPaths == null || datPaths.Length == 0)
+            {
+                MessageBox.Show("Select at least one language DAT (A.dat through M.dat).", "Error");
+                throw new ArgumentException("At least one language DAT must be selected.", nameof(datPaths));
+            }
+
+            string cmnName = Path.GetFileNameWithoutExtension(cmnPath);
+            if (!cmnName.Equals("Cmn", StringComparison.OrdinalIgnoreCase))
+            {
+                MessageBox.Show("First file must be Cmn.dat.", "Error");
+                throw new ArgumentException("First file must be Cmn.dat.", nameof(cmnPath));
+            }
+
+            List<DAT> modifiedDats = new List<DAT>();
+            foreach (string datPath in datPaths)
+            {
+                if (string.IsNullOrEmpty(datPath) || !File.Exists(datPath))
+                {
+                    MessageBox.Show($"Language DAT file not found: {datPath}", "Error");
+                    throw new FileNotFoundException("Language DAT not found.", datPath);
+                }
+                string datName = Path.GetFileNameWithoutExtension(datPath);
+                if (datName.Length != 1 || !AceLocalizationConstants.DatLetters.Keys.Contains(datName[0]))
+                {
+                    MessageBox.Show($"Invalid language DAT: {Path.GetFileName(datPath)}. Must be A.dat through M.dat.", "Error");
+                    throw new ArgumentException($"Invalid language DAT: {datPath}", nameof(datPaths));
+                }
+                modifiedDats.Add(new DAT(datPath, datName[0]));
+            }
+
+            CMN modifiedCmn = new CMN(cmnPath);
             return (modifiedCmn, modifiedDats);
         }
 
@@ -613,7 +722,7 @@ namespace Ace7Ed
 
                 MSMainSave.Enabled = true;
                 MSOptionImportLocalization.Enabled = true;
-                MSOptionBatchCopyLanguage.Enabled = true;
+                MSOptionBatchCopyLanguage.Enabled = _modifiedLocalization.Item2?.Count > 1;
                 MSOptionAddAddon.Enabled = true;
                 MSOptionExport.Enabled = true;
                 MSOptionImport.Enabled = true;
@@ -671,11 +780,14 @@ namespace Ace7Ed
                     var dats = _modifiedLocalization.Item2;
                     foreach (var pasteLanguageLetter in batchCopyLanguage.SelectedPasteLanguages)
                     {
+                        int pasteIndex = dats.FindIndex(d => d.Letter == pasteLanguageLetter);
+                        if (pasteIndex < 0)
+                            continue;
                         for (int i = batchCopyLanguage.StartNumber; i < batchCopyLanguage.EndNumber; i++)
                         {
-                            if (dats[pasteLanguageLetter - 65].Strings[i] == "\0" || batchCopyLanguage.OverwriteExistingString)
+                            if (dats[pasteIndex].Strings[i] == "\0" || batchCopyLanguage.OverwriteExistingString)
                             {
-                                dats[pasteLanguageLetter - 65].Strings[i] = dats[batchCopyLanguage.SelectedCopyLanguageIndex].Strings[i];
+                                dats[pasteIndex].Strings[i] = dats[batchCopyLanguage.SelectedCopyLanguageIndex].Strings[i];
                             }
                         }
                     }
@@ -1076,10 +1188,53 @@ namespace Ace7Ed
 
                 MSMainSave.Enabled = true;
                 MSOptionImportLocalization.Enabled = true;
-                MSOptionBatchCopyLanguage.Enabled = true;
+                MSOptionBatchCopyLanguage.Enabled = _modifiedLocalization.Item2?.Count > 1;
                 MSOptionAddAddon.Enabled = true;
                 MSOptionExport.Enabled = true;
                 MSOptionImport.Enabled = true;
+            }
+        }
+
+        private void MSMainOpenSingleLanguage_Click(object? sender, EventArgs e)
+        {
+            using OpenFileDialog cmnDialog = new OpenFileDialog()
+            {
+                Title = "Select Cmn.dat",
+                Filter = "Cmn.dat|Cmn.dat|DAT files (*.dat)|*.dat|All files (*.*)|*.*",
+                FileName = "Cmn.dat",
+            };
+
+            if (cmnDialog.ShowDialog() != DialogResult.OK)
+                return;
+
+            using OpenFileDialog datDialog = new OpenFileDialog()
+            {
+                Title = "Select language DAT(s) (Ctrl+click for multiple) — A.dat through M.dat",
+                Filter = "DAT files (*.dat)|*.dat|All files (*.*)|*.*",
+                Multiselect = true,
+            };
+
+            if (datDialog.ShowDialog() != DialogResult.OK)
+                return;
+
+            try
+            {
+                _modifiedLocalization = LoadLocalizationSingle(cmnDialog.FileName, datDialog.FileNames);
+                ClearUndoStack();
+
+                string folder = Path.GetDirectoryName(cmnDialog.FileName) ?? "";
+                LoadLocalizationForUI(folder);
+
+                MSMainSave.Enabled = true;
+                MSOptionImportLocalization.Enabled = true;
+                MSOptionBatchCopyLanguage.Enabled = _modifiedLocalization.Item2?.Count > 1;
+                MSOptionAddAddon.Enabled = true;
+                MSOptionExport.Enabled = true;
+                MSOptionImport.Enabled = true;
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                MessageBox.Show($"Failed to load: {ex.Message}", "Open single language");
             }
         }
 
@@ -1438,7 +1593,9 @@ namespace Ace7Ed
                     {
                         foreach (char datLetter in copyPasteLanguagesSelector.SelectedLanguages)
                         {
-                            dats[datLetter - 65].Strings[variableStringNumber] = dats[_selectedDatIndex].Strings[variableStringNumber];
+                            int targetIndex = dats.FindIndex(d => d.Letter == datLetter);
+                            if (targetIndex >= 0)
+                                dats[targetIndex].Strings[variableStringNumber] = dats[_selectedDatIndex].Strings[variableStringNumber];
                         }
                     }
                 }
