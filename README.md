@@ -1,4 +1,4 @@
-# Ace7Ed
+# Ace7Ed - Ace Combat 7's Localization Editing Tool
 
 A fork of [GreenTrafficLight’s Ace7Ed](https://github.com/GreenTrafficLight/Ace7Ed) with new features.
 
