@@ -48,8 +48,12 @@ namespace Ace7Ed
             SearchModeComboBox = new ComboBox();
             DatLanguageComboBox = new ComboBox();
             SelectedLanguageLabel = new Label();
+            MainSplitContainer = new SplitContainer();
             LocalizationEditorMenuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)DatsDataGridView).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)MainSplitContainer).BeginInit();
+            MainSplitContainer.Panel1.SuspendLayout();
+            MainSplitContainer.Panel2.SuspendLayout();
             SuspendLayout();
             // 
             // LocalizationEditorMenuStrip
@@ -156,11 +160,11 @@ namespace Ace7Ed
             // CmnTreeView
             // 
             CmnTreeView.AllowDrop = true;
-            CmnTreeView.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left;
+            CmnTreeView.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             CmnTreeView.BackColor = SystemColors.Window;
-            CmnTreeView.Location = new Point(12, 35);
+            CmnTreeView.Location = new Point(0, 0);
             CmnTreeView.Name = "CmnTreeView";
-            CmnTreeView.Size = new Size(253, 408);
+            CmnTreeView.Size = new Size(253, 383);
             CmnTreeView.TabIndex = 2;
             CmnTreeView.AfterSelect += CmnTreeView_AfterSelect;
             CmnTreeView.NodeMouseClick += CmnTreeView_NodeMouseClick;
@@ -178,10 +182,10 @@ namespace Ace7Ed
             DatsDataGridView.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.Single;
             DatsDataGridView.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             DatsDataGridView.EnableHeadersVisualStyles = false;
-            DatsDataGridView.Location = new Point(271, 56);
+            DatsDataGridView.Location = new Point(0, 0);
             DatsDataGridView.Name = "DatsDataGridView";
             DatsDataGridView.RowHeadersVisible = false;
-            DatsDataGridView.Size = new Size(517, 387);
+            DatsDataGridView.Size = new Size(519, 408);
             DatsDataGridView.TabIndex = 3;
             DatsDataGridView.CellDoubleClick += DatsDataGridView_CellDoubleClick;
             DatsDataGridView.CellMouseClick += DatsDataGridView_CellMouseClick;
@@ -194,7 +198,7 @@ namespace Ace7Ed
             // SearchLabel
             // 
             SearchLabel.AutoSize = true;
-            SearchLabel.Location = new Point(271, 30);
+            SearchLabel.Location = new Point(12, 30);
             SearchLabel.Name = "SearchLabel";
             SearchLabel.Size = new Size(42, 15);
             SearchLabel.TabIndex = 7;
@@ -202,7 +206,7 @@ namespace Ace7Ed
             // 
             // SearchTextBox
             // 
-            SearchTextBox.Location = new Point(318, 27);
+            SearchTextBox.Location = new Point(59, 27);
             SearchTextBox.Name = "SearchTextBox";
             SearchTextBox.Size = new Size(115, 23);
             SearchTextBox.TabIndex = 8;
@@ -214,7 +218,7 @@ namespace Ace7Ed
             SearchModeComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
             SearchModeComboBox.FormattingEnabled = true;
             SearchModeComboBox.Items.AddRange(new object[] { "Number", "ID", "Text" });
-            SearchModeComboBox.Location = new Point(438, 27);
+            SearchModeComboBox.Location = new Point(180, 27);
             SearchModeComboBox.Name = "SearchModeComboBox";
             SearchModeComboBox.Size = new Size(75, 23);
             SearchModeComboBox.TabIndex = 9;
@@ -242,6 +246,25 @@ namespace Ace7Ed
             SelectedLanguageLabel.TabIndex = 6;
             SelectedLanguageLabel.Text = "Selected Language :";
             // 
+            // MainSplitContainer
+            // 
+            MainSplitContainer.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            MainSplitContainer.Location = new Point(12, 60);
+            MainSplitContainer.Name = "MainSplitContainer";
+            // 
+            // MainSplitContainer.Panel1
+            // 
+            MainSplitContainer.Panel1.Controls.Add(CmnTreeView);
+            MainSplitContainer.Panel1MinSize = 100;
+            // 
+            // MainSplitContainer.Panel2
+            // 
+            MainSplitContainer.Panel2.Controls.Add(DatsDataGridView);
+            MainSplitContainer.Panel2MinSize = 200;
+            MainSplitContainer.Size = new Size(776, 383);
+            MainSplitContainer.SplitterDistance = 253;
+            MainSplitContainer.TabIndex = 10;
+            // 
             // LocalizationEditor
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -252,8 +275,7 @@ namespace Ace7Ed
             Controls.Add(SearchLabel);
             Controls.Add(SelectedLanguageLabel);
             Controls.Add(DatLanguageComboBox);
-            Controls.Add(DatsDataGridView);
-            Controls.Add(CmnTreeView);
+            Controls.Add(MainSplitContainer);
             Controls.Add(LocalizationEditorMenuStrip);
             KeyPreview = true;
             MainMenuStrip = LocalizationEditorMenuStrip;
@@ -264,6 +286,9 @@ namespace Ace7Ed
             LocalizationEditorMenuStrip.ResumeLayout(false);
             LocalizationEditorMenuStrip.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)DatsDataGridView).EndInit();
+            MainSplitContainer.Panel1.ResumeLayout(false);
+            MainSplitContainer.Panel2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)MainSplitContainer).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -290,5 +315,6 @@ namespace Ace7Ed
         private ToolStripMenuItem MSOptionAddAddon;
         private ToolStripMenuItem MSOptionExport;
         private ToolStripMenuItem MSOptionImport;
+        private SplitContainer MainSplitContainer;
     }
 }

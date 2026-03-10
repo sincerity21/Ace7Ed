@@ -1515,34 +1515,13 @@ namespace Ace7Ed
                     string fullName = treeNode.Text + suffix;
                     CmnString selectedCmnNode = (CmnString)treeNode.Tag;
 
-                    // Find the deepest existing node under the selected one that is a prefix of fullName,
-                    // so the new variable is placed in the correct alphabetical position in the tree.
-                    CmnString addUnder = selectedCmnNode;
-                    while (true)
-                    {
-                        CmnString? bestChild = null;
-                        foreach (var child in addUnder.Childrens.Values)
-                        {
-                            if (fullName.StartsWith(child.Name, StringComparison.Ordinal) && child.Name.Length < fullName.Length)
-                            {
-                                if (bestChild == null || child.Name.Length > bestChild.Name.Length)
-                                    bestChild = child;
-                            }
-                        }
-                        if (bestChild == null)
-                            break;
-                        addUnder = bestChild;
-                    }
-
-                    if (_modifiedLocalization.Item1.AddVariable(fullName, addUnder.Childrens, out int variableStringNumber))
+                    // Always add by full key at the CMN root so the internal tree stays consistent.
+                    if (_modifiedLocalization.Item1.AddVariable(fullName, _modifiedLocalization.Item1.Root, out int variableStringNumber))
                     {
                         foreach (var dat in _modifiedLocalization.Item2)
                         {
                             dat.Strings.Add("\0");
                         }
-
-                        // If the new node is a prefix of existing siblings, move those siblings under it
-                        _modifiedLocalization.Item1.MoveSiblingsUnderNewNode(addUnder.Childrens, fullName);
 
                         // Ensure the whole tree has the correct connected hierarchy (e.g. AircraftTest_Name_ with _f15c and _f15t under it)
                         _modifiedLocalization.Item1.EnsureAllIntermediateParents();
