@@ -10,6 +10,7 @@ A fork of [GreenTrafficLight’s Ace7Ed](https://github.com/GreenTrafficLight/Ac
 - **Import** from CSV with an option to **overwrite existing strings** or only fill empty slots (**Options → Import…**).
 - **Add a new plane** (**Options → Add a new plane**) to add plane/skin-related string entries (e.g. for mods).
 - **Search** strings in the editor: use the **Search** box on the main form and choose a mode (**Number**, **ID**, or **Text**). Number matches the string index exactly; ID and Text filter by keyword (case-insensitive). Press **Enter** in the search box to apply the filter; clear the box to show all strings again.
+- **Delete Variable**. Begone wrong variable!
 
 ### Building and running
 
