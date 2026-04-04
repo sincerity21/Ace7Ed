@@ -682,6 +682,7 @@ namespace Ace7Ed
             }
             SavedChanges = true;
             ClearUndoStack();
+            MessageBox.Show("Localization has been saved.", "Save", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         #endregion
@@ -1361,6 +1362,9 @@ namespace Ace7Ed
                     ToolStripMenuItem newMenuItem = Utils.CreateToolStripMenuItem("New Variable", "NewVariable", new EventHandler(NewVariableMenuItem_Click), _modifiedLocalization.Item2 == null ? false : true);
                     contextMenu.Items.Add(newMenuItem);
 
+                    ToolStripMenuItem renameVariableMenuItem = Utils.CreateToolStripMenuItem("Rename Variable", "RenameVariable", new EventHandler(RenameVariableMenuItem_Click), _modifiedLocalization.Item2 == null ? false : true);
+                    contextMenu.Items.Add(renameVariableMenuItem);
+
                     ToolStripMenuItem deleteVariableMenuItem = Utils.CreateToolStripMenuItem("Delete Variable", "DeleteVariable", new EventHandler(DeleteVariableMenuItem_Click), _modifiedLocalization.Item2 == null ? false : true);
                     contextMenu.Items.Add(deleteVariableMenuItem);
 
@@ -1570,21 +1574,118 @@ namespace Ace7Ed
 
         private void RenameVariableMenuItem_Click(object? sender, EventArgs e)
         {
-            TreeNode treeNode = CmnTreeView.SelectedNode;
-            int treeNodeIndex = treeNode.Index;
+            if (_modifiedLocalization.Item1 == null || _modifiedLocalization.Item2 == null)
+                return;
 
-            TreeNode treeNodeParent = treeNode.Parent;
+            // Use the node captured when opening the context menu if available, otherwise fall back to the current selection.
+            TreeNode? treeNode = _cmnNodeForContextMenu ?? CmnTreeView.SelectedNode;
+            if (treeNode == null)
+                return;
 
-            using (var input = new Input("Enter a new name for the node", treeNodeParent.Text) { StartPosition = FormStartPosition.CenterScreen })
+            if (treeNode.Tag is not CmnString selectedCmnNode)
+                return;
+
+            var cmn = _modifiedLocalization.Item1;
+
+            // Pre-fill with the original name minus its first letter, while remembering that first letter separately.
+            string parentPrefix = selectedCmnNode.Parent?.Name ?? "";
+            string currentFullName = selectedCmnNode.Name;
+            string initialLetter = currentFullName.Length > 0 ? currentFullName.Substring(0, 1) : "";
+            string editableSuffix = currentFullName.Length > 1 ? currentFullName.Substring(1) : "";
+
+            // Show the first letter as a fixed prefix label, and make the remainder editable in the textbox.
+            using (var input = new Input("Enter a new name for the variable", initialLetter) { StartPosition = FormStartPosition.CenterScreen })
             {
+                input.InputText = editableSuffix;
                 input.ShowDialog();
 
-                if (input.DialogResult == DialogResult.OK)
+                if (input.DialogResult != DialogResult.OK)
                 {
-                    CmnString selectedCmnNode = (CmnString)treeNode.Tag;
+                    input.Dispose();
+                    return;
                 }
 
+                string userInput = (input.InputText ?? "").Trim();
                 input.Dispose();
+
+                // The initial letter is always part of the new name: full name = first letter + what user typed.
+                string newFullName = initialLetter + userInput;
+
+                if (string.IsNullOrEmpty(newFullName))
+                    return;
+
+                // Derive the suffix under the current parent so the node stays at the same level.
+                string newSuffix = newFullName.StartsWith(parentPrefix, StringComparison.Ordinal)
+                    ? newFullName.Substring(parentPrefix.Length)
+                    : newFullName;
+
+                // If another variable with the same full name already exists, abort.
+                if (cmn.CheckVariableExist(newFullName) && !string.Equals(newFullName, currentFullName, StringComparison.Ordinal))
+                {
+                    MessageBox.Show($"A variable named \"{newFullName}\" already exists.", "Rename Variable");
+                    return;
+                }
+
+                string oldFullName = currentFullName;
+
+                // Update the CMN tree structure: adjust the key in the parent's dictionary and the node's Name/Key.
+                if (selectedCmnNode.Parent != null)
+                {
+                    var parentDict = selectedCmnNode.Parent.Childrens;
+                    string oldKey = selectedCmnNode.Key;
+                    if (parentDict.ContainsKey(oldKey))
+                        parentDict.Remove(oldKey);
+
+                    string newKey = newSuffix;
+                    selectedCmnNode.Key = newKey;
+                    selectedCmnNode.Name = newFullName;
+                    parentDict[newKey] = selectedCmnNode;
+                }
+                else
+                {
+                    // Root-level node: stored directly under cmn.Root.
+                    var rootDict = cmn.Root;
+                    string oldKey = selectedCmnNode.Key;
+                    if (rootDict.ContainsKey(oldKey))
+                        rootDict.Remove(oldKey);
+
+                    string newKey = newFullName;
+                    selectedCmnNode.Key = newKey;
+                    selectedCmnNode.Name = newFullName;
+                    rootDict[newKey] = selectedCmnNode;
+                }
+
+                // Update Name for all descendants so their full names stay consistent with the renamed parent.
+                void UpdateChildNames(CmnString parent)
+                {
+                    foreach (var child in parent.Childrens.Values)
+                    {
+                        string childOldName = child.Name;
+                        string suffix = childOldName.Length > oldFullName.Length
+                            ? childOldName.Substring(oldFullName.Length)
+                            : "";
+                        child.Name = parent.Name + suffix;
+                        UpdateChildNames(child);
+                    }
+                }
+
+                UpdateChildNames(selectedCmnNode);
+
+                // Rebuild the TreeView from the updated CMN and reselect the renamed node.
+                LoadCmnTreeView();
+                foreach (TreeNode rootNode in CmnTreeView.Nodes)
+                {
+                    var found = FindTreeNodeByCmnName(rootNode, newFullName);
+                    if (found != null)
+                    {
+                        for (TreeNode? n = found.Parent; n != null; n = n.Parent)
+                            n.Expand();
+                        CmnTreeView.SelectedNode = found;
+                        break;
+                    }
+                }
+
+                SavedChanges = false;
             }
         }
 
