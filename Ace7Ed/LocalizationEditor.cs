@@ -3,6 +3,7 @@ using Ace7Ed.Prompt;
 using Ace7LocalizationFormat.Formats;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
 using CMN = Ace7LocalizationFormat.Formats.CmnFile;
@@ -72,6 +73,8 @@ namespace Ace7Ed
         private long _closeLogGridRowsMs;
         private long _closeLogGridColsMs;
 
+        private bool _mainWindowPlacementApplied;
+
         public bool SavedChanges
         {
             get
@@ -108,6 +111,78 @@ namespace Ace7Ed
             MSOptionImportLocalization.Visible = false;
         }
 
+        protected override void SetVisibleCore(bool value)
+        {
+            if (value && !_mainWindowPlacementApplied && !DesignMode)
+            {
+                _mainWindowPlacementApplied = true;
+                RestoreMainWindowPlacement();
+            }
+            base.SetVisibleCore(value);
+        }
+
+        private static bool IsMainWindowBoundsReasonable(Rectangle bounds)
+        {
+            const int minW = 200;
+            const int minH = 200;
+            if (bounds.Width < minW || bounds.Height < minH)
+                return false;
+            foreach (Screen screen in Screen.AllScreens)
+            {
+                if (screen.WorkingArea.IntersectsWith(bounds))
+                    return true;
+            }
+            return false;
+        }
+
+        private void RestoreMainWindowPlacement()
+        {
+            string stored = Configurations.Default.MainWindowBounds;
+            bool maximized = Configurations.Default.MainWindowMaximized;
+
+            if (string.IsNullOrWhiteSpace(stored))
+            {
+                WindowState = FormWindowState.Maximized;
+                return;
+            }
+
+            string[] parts = stored.Split(',');
+            if (parts.Length != 4
+                || !int.TryParse(parts[0], out int x)
+                || !int.TryParse(parts[1], out int y)
+                || !int.TryParse(parts[2], out int w)
+                || !int.TryParse(parts[3], out int h))
+            {
+                WindowState = FormWindowState.Maximized;
+                return;
+            }
+
+            var bounds = new Rectangle(x, y, w, h);
+            if (!IsMainWindowBoundsReasonable(bounds))
+            {
+                WindowState = FormWindowState.Maximized;
+                return;
+            }
+
+            StartPosition = FormStartPosition.Manual;
+            WindowState = FormWindowState.Normal;
+            Bounds = bounds;
+            if (maximized)
+                WindowState = FormWindowState.Maximized;
+        }
+
+        private void SaveMainWindowPlacement()
+        {
+            bool maximized = WindowState == FormWindowState.Maximized;
+            Rectangle r = WindowState == FormWindowState.Normal
+                ? Bounds
+                : RestoreBounds;
+
+            Configurations.Default.MainWindowBounds = $"{r.Left},{r.Top},{r.Width},{r.Height}";
+            Configurations.Default.MainWindowMaximized = maximized;
+            Configurations.Default.Save();
+        }
+
         private void LocalizationEditor_FormClosing(object? sender, FormClosingEventArgs e)
         {
             // Only ask for confirmation on the first close attempt; skip when deferred Close() runs
@@ -127,6 +202,7 @@ namespace Ace7Ed
 
             if (!_isClosingDeferred)
             {
+                SaveMainWindowPlacement();
                 _isClosingDeferred = true;
                 e.Cancel = true;
                 Hide();
@@ -1357,15 +1433,22 @@ namespace Ace7Ed
                 if (CmnTreeView.SelectedNode is TreeNode cmnTreeNode)
                 {
                     ContextMenuStrip contextMenu = new ContextMenuStrip();
-                    contextMenu.Closed += (_, _) => _cmnNodeForContextMenu = null;
+                    contextMenu.Closed += (_, args) =>
+                    {
+                        if (args.CloseReason != ToolStripDropDownCloseReason.ItemClicked)
+                            _cmnNodeForContextMenu = null;
+                    };
 
                     ToolStripMenuItem newMenuItem = Utils.CreateToolStripMenuItem("New Variable", "NewVariable", new EventHandler(NewVariableMenuItem_Click), _modifiedLocalization.Item2 == null ? false : true);
+                    newMenuItem.Tag = e.Node;
                     contextMenu.Items.Add(newMenuItem);
 
                     ToolStripMenuItem renameVariableMenuItem = Utils.CreateToolStripMenuItem("Rename Variable", "RenameVariable", new EventHandler(RenameVariableMenuItem_Click), _modifiedLocalization.Item2 == null ? false : true);
+                    renameVariableMenuItem.Tag = e.Node;
                     contextMenu.Items.Add(renameVariableMenuItem);
 
                     ToolStripMenuItem deleteVariableMenuItem = Utils.CreateToolStripMenuItem("Delete Variable", "DeleteVariable", new EventHandler(DeleteVariableMenuItem_Click), _modifiedLocalization.Item2 == null ? false : true);
+                    deleteVariableMenuItem.Tag = e.Node;
                     contextMenu.Items.Add(deleteVariableMenuItem);
 
                     contextMenu.Show(CmnTreeView, CmnTreeView.PointToClient(Cursor.Position));
@@ -1501,7 +1584,7 @@ namespace Ace7Ed
         {
             if (_modifiedLocalization.Item1 == null || _modifiedLocalization.Item2 == null)
                 return;
-            TreeNode? treeNode = CmnTreeView.SelectedNode;
+            TreeNode? treeNode = (sender as ToolStripMenuItem)?.Tag as TreeNode ?? _cmnNodeForContextMenu ?? CmnTreeView.SelectedNode;
             if (treeNode == null)
                 return;
             int treeNodeIndex = treeNode.Index;
@@ -1577,8 +1660,7 @@ namespace Ace7Ed
             if (_modifiedLocalization.Item1 == null || _modifiedLocalization.Item2 == null)
                 return;
 
-            // Use the node captured when opening the context menu if available, otherwise fall back to the current selection.
-            TreeNode? treeNode = _cmnNodeForContextMenu ?? CmnTreeView.SelectedNode;
+            TreeNode? treeNode = (sender as ToolStripMenuItem)?.Tag as TreeNode ?? _cmnNodeForContextMenu ?? CmnTreeView.SelectedNode;
             if (treeNode == null)
                 return;
 
@@ -1689,17 +1771,15 @@ namespace Ace7Ed
             }
         }
 
-        private void DeleteVariableMenuItem_Click(object? sender, EventArgs e)
+        /// <summary>Prompts and deletes the variable for the given tree node (same behavior as the context menu).</summary>
+        private bool TryDeleteVariable(TreeNode? treeNode)
         {
             if (_modifiedLocalization.Item1 == null || _modifiedLocalization.Item2 == null)
-                return;
-            // Use node captured at context menu open; TreeView selection is often cleared when the menu is shown
-            TreeNode? treeNode = _cmnNodeForContextMenu ?? CmnTreeView.SelectedNode;
+                return false;
             if (treeNode == null)
-                return;
-
+                return false;
             if (treeNode.Tag is not CmnString selectedCmnNode)
-                return;
+                return false;
 
             string variableName = selectedCmnNode.Name;
 
@@ -1709,7 +1789,7 @@ namespace Ace7Ed
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Warning);
             if (result != DialogResult.Yes)
-                return;
+                return false;
 
             List<int> variableStringNumbers = _modifiedLocalization.Item1.DeleteVariable(selectedCmnNode);
             var dats = _modifiedLocalization.Item2;
@@ -1729,6 +1809,14 @@ namespace Ace7Ed
             LoadCmnTreeView();
             LoadDatsDataGridView();
             SavedChanges = false;
+            return true;
+        }
+
+        private void DeleteVariableMenuItem_Click(object? sender, EventArgs e)
+        {
+            TreeNode? treeNode = (sender as ToolStripMenuItem)?.Tag as TreeNode ?? _cmnNodeForContextMenu ?? CmnTreeView.SelectedNode;
+            TryDeleteVariable(treeNode);
+            _cmnNodeForContextMenu = null;
         }
 
         #endregion
@@ -1851,6 +1939,11 @@ namespace Ace7Ed
             {
                 SaveChanges();
                 SavedChanges = true;
+            }
+            else if (e.KeyCode == Keys.Delete && (CmnTreeView.Focused || CmnTreeView.ContainsFocus))
+            {
+                TryDeleteVariable(CmnTreeView.SelectedNode);
+                e.Handled = true;
             }
         }
     }

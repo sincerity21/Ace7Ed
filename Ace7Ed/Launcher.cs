@@ -93,7 +93,7 @@ namespace Ace7Ed
 
             Hide();
 
-            using (var localizationEditor = new LocalizationEditor() { StartPosition = FormStartPosition.CenterScreen })
+            using (var localizationEditor = new LocalizationEditor())
             {
                 localizationEditor.ShowDialog();
             }
